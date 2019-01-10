@@ -1,3 +1,6 @@
+import time
+
+
 def load_classes(file_path):
     with open(file_path, "r") as fp:
         names = [x for x in fp.read().split("\n") if x]
@@ -19,3 +22,20 @@ def color_map(n):
 
         cmap.append((r, g, b))
     return cmap
+
+
+class DurationTimer:
+    def __init__(self):
+        self.start, self.end = None, None
+
+    @property
+    def duration(self):
+        return self.end - self.start
+
+    def __enter__(self):
+        self.start, self.end = time.time(), None
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.end = time.time()
+        return False
