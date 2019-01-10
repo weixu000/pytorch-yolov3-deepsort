@@ -35,10 +35,17 @@ def draw_bbox(img, bbox_batch, classes=None, cmap=None):
     """
     Draw bounding boxes on the image and add class label and confidence score as title
     """
-    for bbox, cls, scr in zip(*bbox_batch):
-        bbox, cls, scr = tuple(bbox.long().tolist()), cls.long().item(), scr.item()
+    for bbox in zip(*bbox_batch):
+        if len(bbox) == 2:  # Without scores
+            bbox, cls = bbox
+            bbox, cls = tuple(bbox.long().tolist()), cls.long().item()
+            label = f'{classes[cls] if classes is not None else cls}'
+        else:
+            bbox, cls, scr = bbox
+            bbox, cls, scr = tuple(bbox.long().tolist()), cls.long().item(), scr.item()
+            label = f'{classes[cls] if classes is not None else cls} {scr:.2f}'
+
         color = cmap[cls] if cmap is not None else [255, 0, 0]
-        label = f'{classes[cls] if classes is not None else cls} {scr:.2f}'
         p1, p2 = bbox[:2], bbox[2:]
         cv2.rectangle(img, p1, p2, color)
         t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1, 1)[0]
@@ -98,7 +105,7 @@ def threshold_confidence(pred, threshold=0.5):
     for batch in zip(pred[:, :, :4], max_conf, max_conf_score, obj_thresh):
         output.append(tuple(x[batch[-1]] for x in batch[:-1]))
 
-    return output
+    return tuple(output)
 
 
 def NMS(preds, threshold=0.4):
@@ -133,4 +140,4 @@ def NMS(preds, threshold=0.4):
             ind_batch.append(ind_cls)
         ind_batch = torch.cat(ind_batch)
         output.append(tuple(x[ind_batch] for x in [bbox_batch, cls_batch, scr_batch]))
-    return output
+    return tuple(output)
