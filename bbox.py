@@ -139,7 +139,6 @@ def NMS(preds, threshold=0.4):
                 ind_cls = ind_cls[:i + 1 + iou_ind.shape[0]]
                 bbox_cls = bbox_cls[:i + 1 + iou_ind.shape[0]]
                 i += 1
-            ind_batch.append(ind_cls)
-        ind_batch = torch.cat(ind_batch)
+            ind_batch += ind_cls.tolist()
         output.append(tuple(x[ind_batch] for x in [bbox_batch, cls_batch, scr_batch]))
     return tuple(output)
