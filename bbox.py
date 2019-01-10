@@ -93,18 +93,18 @@ def center_to_corner(pred):
     pred[:, :, 3] += pred[:, :, 1]
 
 
-def threshold_confidence(pred, threshold=0.5):
+def threshold_confidence(pred, threshold=0.1):
     """
-    Threshold bounding boxes by object confidence
+    Threshold bounding boxes by probability
     Returns a list of (corners of boxes, class label, probability) for each image
     """
     center_to_corner(pred)
-    obj_thresh = pred[:, :, 4] > threshold
     max_conf_score, max_conf = pred[:, :, 5:].max(2)
     max_conf_score *= pred[:, :, 4]  # probability = object confidence * class score
+    prob_thresh = max_conf_score > threshold
 
     output = []
-    for batch in zip(pred[:, :, :4], max_conf, max_conf_score, obj_thresh):
+    for batch in zip(pred[:, :, :4], max_conf, max_conf_score, prob_thresh):
         output.append(tuple(x[batch[-1]] for x in batch[:-1]))
 
     return tuple(output)
