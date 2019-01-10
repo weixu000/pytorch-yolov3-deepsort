@@ -7,8 +7,8 @@ def letterbox_dim(orig, box):
     h, w = box
     img_h, img_w = orig
 
-    new_w = img_w * min(w // img_w, h // img_h)
-    new_h = img_h * min(w // img_w, h // img_h)
+    new_w = int(img_w * min(w / img_w, h / img_h))
+    new_h = int(img_h * min(w / img_w, h / img_h))
 
     return new_h, new_w
 
