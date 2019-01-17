@@ -6,6 +6,15 @@ from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from preprocessing import cvmat_to_tensor, letterbox_transform, inv_letterbox_transform
 from util import load_classes, color_map
 
+
+def detect(net, tensor):
+    net.eval()
+    with torch.no_grad():
+        output = net(tensor.unsqueeze(0)).data
+        output = threshold_confidence(output)
+        return NMS(output)[0]
+
+
 if __name__ == '__main__':
     # Set up the neural network
     net_info, net = parse_darknet(parse_cfg_file('cfg/yolov3.cfg'))
@@ -17,11 +26,7 @@ if __name__ == '__main__':
     orig_img = cv2.imread('imgs/dog-cycle-car.png')
     img = letterbox_transform(orig_img, inp_dim)
 
-    net.eval()
-    with torch.no_grad():
-        output = net(cvmat_to_tensor(img).unsqueeze(0)).data
-    output = threshold_confidence(output)
-    output = NMS(output)
+    output = detect(net, cvmat_to_tensor(img))
 
     classes = load_classes('data/coco.names')
     cmap = color_map(len(classes))
