@@ -1,6 +1,8 @@
 import cv2
 import torch
 
+from util import draw_text
+
 
 def IOU(box1, box2):
     """
@@ -48,10 +50,7 @@ def draw_bbox(img, bbox_batch, classes=None, cmap=None):
         color = cmap[cls] if cmap is not None else [255, 0, 0]
         p1, p2 = bbox[:2], bbox[2:]
         cv2.rectangle(img, p1, p2, color)
-        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1, 1)[0]
-        p2 = p1[0] + t_size[0], p1[1] - t_size[1]
-        cv2.rectangle(img, p1, p2, color, -1)
-        cv2.putText(img, label, p1, cv2.FONT_HERSHEY_PLAIN, 1, [255 - c for c in color])
+        draw_text(img, label, color, bottom_left=p1)
 
 
 def anchor_transform(prediction, inp_dim, anchors, num_classes):

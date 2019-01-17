@@ -1,5 +1,7 @@
 import time
 
+import cv2
+
 
 def load_classes(file_path):
     with open(file_path, "r") as fp:
@@ -39,3 +41,16 @@ class DurationTimer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.end = time.time()
         return False
+
+
+def draw_text(img, label, color, bottom_left=None, upper_right=None):
+    t_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1, 1)
+    if bottom_left is None:
+        assert upper_right is not None
+        bottom_left = upper_right[0] - t_size[0], upper_right[1] + t_size[1]
+    else:
+        assert upper_right is None
+        upper_right = bottom_left[0] + t_size[0], bottom_left[1] - t_size[1]
+
+    cv2.rectangle(img, bottom_left, upper_right, color, -1)
+    cv2.putText(img, label, bottom_left, cv2.FONT_HERSHEY_PLAIN, 1, [255 - c for c in color])
