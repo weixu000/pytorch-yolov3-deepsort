@@ -1,11 +1,12 @@
 import cv2
 import torch
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
-from bbox import threshold_confidence, NMS, draw_bbox
+from bbox import threshold_confidence, NMS
 from coco import COCODataset
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
-from preprocessing import cvmat_to_tensor, letterbox_transform, inv_letterbox_transform
-from util import color_map
+from preprocessing import cvmat_to_tensor, letterbox_transform
 
 if __name__ == '__main__':
     # Setup the neural network
@@ -22,33 +23,27 @@ if __name__ == '__main__':
         img = letterbox_transform(orig_img, inp_dim)
         tensor = cvmat_to_tensor(img)
 
-        bbox = torch.tensor(bbox)
-        cls = torch.tensor(cls)
+        # bbox = torch.tensor(bbox)
+        # cls = torch.tensor(cls)
 
-        bbox[:, 2] += bbox[:, 0]
-        bbox[:, 3] += bbox[:, 1]
+        # bbox[:, 2] += bbox[:, 0]
+        # bbox[:, 3] += bbox[:, 1]
 
-        return orig_img, img, tensor, torch.tensor(bbox), torch.tensor(cls)
+        # return orig_img, img, tensor, bbox, cls
+        return tensor
 
 
     dataset = COCODataset('COCO/annotations/instances_val2017.json', 'COCO/val2017', transform=transform)
+    loader = DataLoader(dataset, batch_size=25, num_workers=4, pin_memory=True)
 
-    net.eval()
+    out = []
+    net.cuda().eval()
     with torch.no_grad():
-        orig_img, img, tensor, bbox, cls = dataset[0]
-        output = net(tensor.unsqueeze(0)).data
-    output = threshold_confidence(output)
-    output = NMS(output)
+        for img in tqdm(loader):
+            output = net(img.cuda()).data
+            output = threshold_confidence(output)
+            output = NMS(output)
+            out.extend(tuple(y.cpu() for y in x) for x in output)
 
-    classes = dataset.cls
-    cmap = color_map(len(classes))
-
-    draw_bbox(img, output[0], classes, cmap)
-    img = inv_letterbox_transform(img, orig_img.shape[:-1])
-    cv2.imshow('pred', img)
-
-    draw_bbox(orig_img, (bbox, cls), classes, cmap)
-    cv2.imshow('label', orig_img)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    out = tuple(out)
+    torch.save(out, 'coco-val.pt')
