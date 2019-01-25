@@ -23,14 +23,14 @@ if __name__ == '__main__':
 
     inp_dim = net_info["inp_dim"][::-1]
 
-    orig_img = cv2.imread('imgs/dog-cycle-car.png')
+    orig_img = cv2.imread('imgs/dog-cycle-car.jpg')
     img = letterbox_transform(orig_img, inp_dim)
 
     output = detect(net, cvmat_to_tensor(img))
 
     classes = load_classes('data/coco.names')
     cmap = color_map(len(classes))
-    draw_bbox(img, output[0], classes, cmap)
+    draw_bbox(img, output, classes, cmap)
 
     img = inv_letterbox_transform(img, orig_img.shape[:-1])
 
