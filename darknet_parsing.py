@@ -91,7 +91,7 @@ def parse_upsample(options, filters_list):
     stride = find_option(options, 'stride', 2)
 
     filters_list.append(filters_list[-1])
-    return nn.Upsample(scale_factor=stride, mode='bilinear')
+    return nn.Upsample(scale_factor=stride, mode='nearest')
 
 
 def parse_maxpool(options, filters_list):
