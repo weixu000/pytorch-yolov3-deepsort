@@ -1,6 +1,7 @@
 import time
 
 import cv2
+import torch
 
 
 def load_classes(file_path):
@@ -54,3 +55,30 @@ def draw_text(img, label, color, bottom_left=None, upper_right=None):
 
     cv2.rectangle(img, bottom_left, upper_right, color, -1)
     cv2.putText(img, label, bottom_left, cv2.FONT_HERSHEY_PLAIN, 1, [255 - c for c in color])
+
+
+def cvmat_to_tensor(mat):
+    mat = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
+    mat = mat.transpose((2, 0, 1))
+    mat = torch.from_numpy(mat).float().div(255)
+    return mat
+
+
+def draw_bbox(img, bbox_batch, classes=None, cmap=None):
+    """
+    Draw bounding boxes on the image and add class label and confidence score as title
+    """
+    for bbox in zip(*bbox_batch):
+        if len(bbox) == 2:  # Without scores
+            bbox, cls = bbox
+            bbox, cls = tuple(bbox.long().tolist()), cls.long().item()
+            label = f'{classes[cls] if classes is not None else cls}'
+        else:
+            bbox, cls, scr = bbox
+            bbox, cls, scr = tuple(bbox.long().tolist()), cls.long().item(), scr.item()
+            label = f'{classes[cls] if classes is not None else cls} {scr:.2f}'
+
+        color = cmap[cls] if cmap is not None else [255, 0, 0]
+        p1, p2 = bbox[:2], bbox[2:]
+        cv2.rectangle(img, p1, p2, color)
+        draw_text(img, label, color, bottom_left=p1)

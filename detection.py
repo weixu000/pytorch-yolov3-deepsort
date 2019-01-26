@@ -1,11 +1,10 @@
 import cv2
 import torch
 
-from bbox import threshold_confidence, NMS, draw_bbox
+from bbox import threshold_confidence, NMS
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from letterbox import letterbox_image, inv_letterbox_image
-from preprocessing import cvmat_to_tensor
-from util import load_classes, color_map
+from util import load_classes, color_map, cvmat_to_tensor, draw_bbox
 
 
 def detect(net, tensor):

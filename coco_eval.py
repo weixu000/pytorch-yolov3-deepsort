@@ -7,7 +7,7 @@ from bbox import threshold_confidence, NMS
 from coco import COCODataset
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from letterbox import letterbox_image
-from preprocessing import cvmat_to_tensor
+from util import cvmat_to_tensor
 
 if __name__ == '__main__':
     # Setup the neural network

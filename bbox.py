@@ -1,7 +1,4 @@
-import cv2
 import torch
-
-from util import draw_text
 
 
 def IOU(box1, box2):
@@ -31,26 +28,6 @@ def IOU(box1, box2):
     iou = inter_area / (b1_area + b2_area - inter_area)
 
     return iou
-
-
-def draw_bbox(img, bbox_batch, classes=None, cmap=None):
-    """
-    Draw bounding boxes on the image and add class label and confidence score as title
-    """
-    for bbox in zip(*bbox_batch):
-        if len(bbox) == 2:  # Without scores
-            bbox, cls = bbox
-            bbox, cls = tuple(bbox.long().tolist()), cls.long().item()
-            label = f'{classes[cls] if classes is not None else cls}'
-        else:
-            bbox, cls, scr = bbox
-            bbox, cls, scr = tuple(bbox.long().tolist()), cls.long().item(), scr.item()
-            label = f'{classes[cls] if classes is not None else cls} {scr:.2f}'
-
-        color = cmap[cls] if cmap is not None else [255, 0, 0]
-        p1, p2 = bbox[:2], bbox[2:]
-        cv2.rectangle(img, p1, p2, color)
-        draw_text(img, label, color, bottom_left=p1)
 
 
 def anchor_transform(prediction, inp_dim, anchors, num_classes):

@@ -1,12 +1,10 @@
 import cv2
 import torch
 
-from bbox import draw_bbox
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from detection import detect
 from letterbox import letterbox_image, inv_letterbox_bbox
-from preprocessing import cvmat_to_tensor
-from util import load_classes, color_map, DurationTimer, draw_text
+from util import load_classes, color_map, DurationTimer, draw_text, cvmat_to_tensor, draw_bbox
 
 if __name__ == '__main__':
     # Set up the neural network
