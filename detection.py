@@ -3,7 +3,8 @@ import torch
 
 from bbox import threshold_confidence, NMS, draw_bbox
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
-from preprocessing import cvmat_to_tensor, letterbox_image, inv_letterbox_image
+from letterbox import letterbox_image, inv_letterbox_image
+from preprocessing import cvmat_to_tensor
 from util import load_classes, color_map
 
 

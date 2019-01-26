@@ -1,7 +1,6 @@
 import cv2
 import torch
 
-from preprocessing import letterbox_dim
 from util import draw_text
 
 
@@ -142,15 +141,3 @@ def NMS(preds, threshold=0.4):
             ind_batch += ind_cls.tolist()
         output.append(tuple(x[ind_batch] for x in [bbox_batch, cls_batch, scr_batch]))
     return tuple(output)
-
-
-def inv_letterbox_bbox(bbox, box_dim, img_dim):
-    img_h, img_w = img_dim
-    h, w = box_dim
-    new_h, new_w = letterbox_dim(img_dim, box_dim)
-
-    bbox[:, [0, 2]] -= (w - new_w) // 2
-    bbox[:, [0, 2]] *= img_w / w
-
-    bbox[:, [1, 3]] -= (h - new_h) // 2
-    bbox[:, [1, 3]] *= img_h / h

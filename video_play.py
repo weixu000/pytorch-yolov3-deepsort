@@ -1,10 +1,11 @@
 import cv2
 import torch
 
-from bbox import draw_bbox, inv_letterbox_bbox
+from bbox import draw_bbox
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from detection import detect
-from preprocessing import cvmat_to_tensor, letterbox_image
+from letterbox import letterbox_image, inv_letterbox_bbox
+from preprocessing import cvmat_to_tensor
 from util import load_classes, color_map, DurationTimer, draw_text
 
 if __name__ == '__main__':
