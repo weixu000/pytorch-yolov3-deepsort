@@ -82,3 +82,12 @@ def draw_bbox(img, bbox_batch, classes=None, cmap=None):
         p1, p2 = bbox[:2], bbox[2:]
         cv2.rectangle(img, p1, p2, color)
         draw_text(img, label, color, bottom_left=p1)
+
+
+def iterate_video(capture):
+    while capture.isOpened():
+        retval, frame = capture.read()
+        if retval:
+            yield frame
+        else:
+            break

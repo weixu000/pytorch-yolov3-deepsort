@@ -4,7 +4,7 @@ import torch
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from detection import detect
 from letterbox import letterbox_image, inv_letterbox_bbox
-from util import load_classes, color_map, DurationTimer, draw_text, cvmat_to_tensor, draw_bbox
+from util import load_classes, color_map, DurationTimer, draw_text, cvmat_to_tensor, draw_bbox, iterate_video
 
 if __name__ == '__main__':
     # Set up the neural network
@@ -23,9 +23,7 @@ if __name__ == '__main__':
 
     net.cuda().eval()
     with torch.no_grad():
-        while cap.isOpened():
-            _, frame = cap.read()
-
+        for frame in iterate_video(cap):
             with DurationTimer() as d:
                 output = detect(net, cvmat_to_tensor(letterbox_image(frame, inp_dim)).cuda())
                 output = tuple(y[output[1] == classes.index('person')] for y in output)  # Select persons
