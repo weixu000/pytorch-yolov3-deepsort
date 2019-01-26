@@ -13,7 +13,7 @@ def letterbox_dim(orig, box):
     return new_h, new_w
 
 
-def letterbox_transform(img, box_dim):
+def letterbox_image(img, box_dim):
     """resize image with unchanged aspect ratio using padding"""
     h, w = box_dim
     new_h, new_w = letterbox_dim(img.shape[:-1], box_dim)
@@ -25,7 +25,7 @@ def letterbox_transform(img, box_dim):
     return out
 
 
-def inv_letterbox_transform(box, img_dim):
+def inv_letterbox_image(box, img_dim):
     img_h, img_w = img_dim
     h, w = box.shape[:-1]
 

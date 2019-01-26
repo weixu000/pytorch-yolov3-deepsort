@@ -6,7 +6,7 @@ from tqdm import tqdm
 from bbox import threshold_confidence, NMS
 from coco import COCODataset
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
-from preprocessing import cvmat_to_tensor, letterbox_transform
+from preprocessing import cvmat_to_tensor, letterbox_image
 
 if __name__ == '__main__':
     # Setup the neural network
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     # Setup coco dataset
     def transform(img_path, bbox, cls):
         orig_img = cv2.imread(img_path)
-        img = letterbox_transform(orig_img, inp_dim)
+        img = letterbox_image(orig_img, inp_dim)
         tensor = cvmat_to_tensor(img)
 
         # bbox = torch.tensor(bbox)

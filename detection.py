@@ -3,7 +3,7 @@ import torch
 
 from bbox import threshold_confidence, NMS, draw_bbox
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
-from preprocessing import cvmat_to_tensor, letterbox_transform, inv_letterbox_transform
+from preprocessing import cvmat_to_tensor, letterbox_image, inv_letterbox_image
 from util import load_classes, color_map
 
 
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     inp_dim = net_info["inp_dim"][::-1]
 
     orig_img = cv2.imread('imgs/dog-cycle-car.jpg')
-    img = letterbox_transform(orig_img, inp_dim)
+    img = letterbox_image(orig_img, inp_dim)
 
     output = detect(net, cvmat_to_tensor(img))
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     cmap = color_map(len(classes))
     draw_bbox(img, output, classes, cmap)
 
-    img = inv_letterbox_transform(img, orig_img.shape[:-1])
+    img = inv_letterbox_image(img, orig_img.shape[:-1])
 
     cv2.imshow('image', img)
     cv2.waitKey(0)
