@@ -4,7 +4,7 @@ import torch
 from bbox import threshold_confidence, NMS
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from letterbox import letterbox_image, inv_letterbox_image
-from util import load_classes, color_map, cvmat_to_tensor, draw_bbox
+from util import load_classes, color_map, cvmat_to_tensor, draw_detections
 
 
 def detect(net, tensor):
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     classes = load_classes('data/coco.names')
     cmap = color_map(len(classes))
-    draw_bbox(img, output, classes, cmap)
+    draw_detections(img, output, classes, cmap)
 
     img = inv_letterbox_image(img, orig_img.shape[:-1])
 

@@ -1,6 +1,7 @@
 import time
 
 import cv2
+import numpy as np
 import torch
 
 
@@ -64,24 +65,34 @@ def cvmat_to_tensor(mat):
     return mat
 
 
-def draw_bbox(img, bbox_batch, classes=None, cmap=None):
+def draw_bbox(img, bbox, label_fn=lambda i: '', color_fn=lambda i: [255, 0, 0]):
+    """
+    Draw bounding boxes on the image
+    """
+    for i, b in enumerate(bbox):
+        b = tuple(b)
+        p1, p2 = b[:2], b[2:]
+        cv2.rectangle(img, p1, p2, color_fn(i))
+
+        label = label_fn(i)
+        if label:
+            draw_text(img, label, color_fn(i), bottom_left=p1)
+
+
+def draw_detections(img, detections, classes, cmap):
     """
     Draw bounding boxes on the image and add class label and confidence score as title
     """
-    for bbox in zip(*bbox_batch):
-        if len(bbox) == 2:  # Without scores
-            bbox, cls = bbox
-            bbox, cls = tuple(bbox.long().tolist()), cls.long().item()
-            label = f'{classes[cls] if classes is not None else cls}'
-        else:
-            bbox, cls, scr = bbox
-            bbox, cls, scr = tuple(bbox.long().tolist()), cls.long().item(), scr.item()
-            label = f'{classes[cls] if classes is not None else cls} {scr:.2f}'
+    bbox, cls, scr = detections
+    label_fn = lambda i: f'{classes[cls[i].long().item()]} {scr[i].item():.2f}'
+    color_fn = lambda i: cmap[cls[i].long().item()]
+    draw_bbox(img, bbox.long().numpy(), label_fn, color_fn)
 
-        color = cmap[cls] if cmap is not None else [255, 0, 0]
-        p1, p2 = bbox[:2], bbox[2:]
-        cv2.rectangle(img, p1, p2, color)
-        draw_text(img, label, color, bottom_left=p1)
+
+def draw_trackers(img, trackers):
+    bbox, id = trackers[:, :-1], trackers[:, -1]
+    label_fn = lambda i: f'{id[i]}'
+    draw_bbox(img, bbox.astype(np.int), label_fn)
 
 
 def iterate_video(capture):
