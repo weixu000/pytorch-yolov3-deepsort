@@ -56,20 +56,17 @@ def convert_bbox_to_z(bbox):
     y = bbox[1] + h / 2.
     s = w * h  # scale is just area
     r = w / float(h)
-    return np.array([x, y, s, r]).reshape((4, 1))
+    return np.array([x, y, s, r])
 
 
-def convert_z_to_bbox(x, score=None):
+def convert_z_to_bbox(x):
     """
     Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
       [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
     """
     w = np.sqrt(x[2] * x[3])
     h = x[2] / w
-    if score is None:
-        return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2.]).reshape((1, 4))
-    else:
-        return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2., score]).reshape((1, 5))
+    return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2.])
 
 
 class KalmanBoxTracker(object):
@@ -96,7 +93,7 @@ class KalmanBoxTracker(object):
         self.kf.Q[-1, -1] *= 0.01
         self.kf.Q[4:, 4:] *= 0.01
 
-        self.kf.x[:4] = convert_bbox_to_z(bbox)
+        self.kf.x[:4] = convert_bbox_to_z(bbox)[:, np.newaxis]
         self.time_since_update = 0
         self.id = KalmanBoxTracker.count
         KalmanBoxTracker.count += 1
@@ -113,7 +110,7 @@ class KalmanBoxTracker(object):
         self.history = []
         self.hits += 1
         self.hit_streak += 1
-        self.kf.update(convert_bbox_to_z(bbox))
+        self.kf.update(convert_bbox_to_z(bbox)[:, np.newaxis])
 
     def predict(self):
         """
@@ -126,14 +123,15 @@ class KalmanBoxTracker(object):
         if self.time_since_update > 0:
             self.hit_streak = 0
         self.time_since_update += 1
-        self.history.append(convert_z_to_bbox(self.kf.x))
+        self.history.append(self.state)
         return self.history[-1]
 
-    def get_state(self):
+    @property
+    def state(self):
         """
         Returns the current bounding box estimate.
         """
-        return convert_z_to_bbox(self.kf.x)
+        return convert_z_to_bbox(self.kf.x.reshape(-1))
 
 
 def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
@@ -143,31 +141,21 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
     Returns 3 lists of matches, unmatched_detections and unmatched_trackers
     """
     if len(trackers) == 0:
-        return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0, 5), dtype=int)
-    iou_matrix = iou(detections[:, :-1], trackers[:, :-1])
+        return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0,), dtype=int)
+    iou_matrix = iou(detections, trackers)
     matched_detections, matched_trackers = linear_sum_assignment(-iou_matrix)
 
-    unmatched_detections = [d for d in range(len(detections)) if d not in matched_detections]
-    unmatched_trackers = [t for t in range(len(trackers)) if t not in matched_trackers]
+    matches = [m for m in zip(matched_detections, matched_trackers) if iou_matrix[m[0], m[1]] >= iou_threshold]
+    matches = np.array(matches) if matches else np.empty((0, 2), dtype=int)
 
-    # filter out matched with low IOU
-    matches = []
-    for m in zip(matched_detections, matched_trackers):
-        if iou_matrix[m[0], m[1]] < iou_threshold:
-            unmatched_detections.append(m[0])
-            unmatched_trackers.append(m[1])
-        else:
-            matches.append(m)
-    if not matches:
-        matches = np.empty((0, 2), dtype=int)
-    else:
-        matches = np.array(matches, dtype=int)
+    unmatched_detections = [d for d in range(len(detections)) if d not in matches[:, 0]]
+    unmatched_trackers = [t for t in range(len(trackers)) if t not in matches[:, 1]]
 
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
 
 class Sort(object):
-    def __init__(self, max_age=1, min_hits=3):
+    def __init__(self, max_age=10, min_hits=3):
         """
         Sets key parameters for SORT
         """
@@ -186,42 +174,29 @@ class Sort(object):
         NOTE: The number of objects returned may differ from the number of detections provided.
         """
         self.frame_count += 1
-        # get predicted locations from existing trackers.
-        trks = np.zeros((len(self.trackers), 5))
-        to_del = []
-        for t, trk in enumerate(trks):
-            pos = self.trackers[t].predict()[0]
-            trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
-            if np.any(np.isnan(pos)):
-                to_del.append(t)
-        trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
-        for t in reversed(to_del):
-            self.trackers.pop(t)
 
-        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks)
+        # get predicted locations from existing trackers.
+        self.trackers = [t for t in self.trackers if np.all(np.isfinite(t.predict()))]
+        trks = np.array([t.state for t in self.trackers])
+
+        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets[:, :-1], trks)
 
         # update matched trackers with assigned detections
-        for t, trk in enumerate(self.trackers):
-            if t not in unmatched_trks:
-                d = matched[np.flatnonzero(matched[:, 1] == t)[0], 0]
-                trk.update(dets[d, :])
+        for d, t in matched:
+            self.trackers[t].update(dets[d, :])
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :])
             self.trackers.append(trk)
 
+        # remove tracks not updated
+        self.trackers = [t for t in self.trackers if t.time_since_update < self.max_age]
+
         ret = []
-        i = len(self.trackers)
-        for trk in reversed(self.trackers):
-            d = trk.get_state()[0]
-            if trk.time_since_update < 1 and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
-                ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
-            i -= 1
-            # remove dead tracklet
-            if trk.time_since_update > self.max_age:
-                self.trackers.pop(i)
-        if ret:
-            return np.concatenate(ret)
-        else:
-            return np.empty((0, 5))
+        for trk in self.trackers:
+            if trk.time_since_update == 0 and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
+                ret.append(trk.state.tolist())
+                ret[-1].append(trk.id + 1)
+
+        return np.array(ret) if ret else np.empty((0, 5))
