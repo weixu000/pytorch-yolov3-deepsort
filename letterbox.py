@@ -1,9 +1,15 @@
+"""
+Helper functions for letterbox transformation
+"""
 import cv2
 
 import numpy as np
 
 
 def letterbox_dim(orig, box):
+    """
+    Compute dimensions of the image inside the letterbox
+    """
     h, w = box
     img_h, img_w = orig
 
@@ -14,7 +20,9 @@ def letterbox_dim(orig, box):
 
 
 def letterbox_image(img, box_dim):
-    """resize image with unchanged aspect ratio using padding"""
+    """
+    Resize image with unchanged aspect ratio using padding
+    """
     h, w = box_dim
     new_h, new_w = letterbox_dim(img.shape[:-1], box_dim)
     img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
@@ -26,6 +34,9 @@ def letterbox_image(img, box_dim):
 
 
 def inv_letterbox_image(box, img_dim):
+    """
+    Inverse of letterbox_image
+    """
     img_h, img_w = img_dim
     h, w = box.shape[:-1]
 
@@ -38,6 +49,9 @@ def inv_letterbox_image(box, img_dim):
 
 
 def inv_letterbox_bbox(bbox, box_dim, img_dim):
+    """
+    Convert (x1, y1 x2, y2) in letterboxes back to original images
+    """
     img_h, img_w = img_dim
     h, w = box_dim
     new_h, new_w = letterbox_dim(img_dim, box_dim)

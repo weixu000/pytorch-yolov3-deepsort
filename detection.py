@@ -8,6 +8,9 @@ from util import load_classes, color_map, cvmat_to_tensor, draw_detections
 
 
 class Detecter:
+    """
+    Encapsulate YOLO model and the letterbox transform
+    """
     classes = load_classes('data/coco.names')
     cmap = color_map(len(classes))
 

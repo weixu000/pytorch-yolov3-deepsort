@@ -1,3 +1,7 @@
+"""
+Functionality to parse .cfg and .weights from Darknet(https://pjreddie.com/darknet/)
+"""
+
 import numpy as np
 import torch
 from torch import nn as nn

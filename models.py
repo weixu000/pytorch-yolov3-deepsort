@@ -1,3 +1,7 @@
+"""
+Pytorch models of YOLO
+"""
+
 import torch
 from torch import nn as nn
 

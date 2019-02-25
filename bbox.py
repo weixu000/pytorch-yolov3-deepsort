@@ -1,3 +1,6 @@
+"""
+Algorithms on bounding boxes
+"""
 import torch
 
 
@@ -8,9 +11,6 @@ def IOU(box1, box2):
     # Get the coordinates of bounding boxes
     b1_x1, b1_y1, b1_x2, b1_y2 = [x.unsqueeze(0) for x in (box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3])]
     b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
-
-    assert torch.all(b1_x2 > b1_x1) and torch.all(b1_y2 > b1_y1) and torch.all(b2_x2 > b2_x1) and torch.all(
-        b2_y2 > b2_y1)
 
     # get the corrdinates of the intersection rectangle
     inter_x1 = torch.max(b1_x1, b2_x1)
@@ -31,6 +31,9 @@ def IOU(box1, box2):
 
 
 def anchor_transform(prediction, inp_dim, anchors, num_classes):
+    """
+    Transform network prediction into (center_x, center_y, width, height)
+    """
     batch_size = prediction.shape[0]
     grid_size = prediction.shape[2:]
     stride = inp_dim[0] // grid_size[0], inp_dim[1] // grid_size[1]
@@ -72,7 +75,7 @@ def center_to_corner(pred):
 def threshold_confidence(pred, threshold=0.1):
     """
     Threshold bounding boxes by probability
-    Returns a list of (corners of boxes, class label, probability) for each image
+    :return ((corners of boxes, class label, probability) for each image)
     """
     center_to_corner(pred)
     max_conf_score, max_conf = pred[:, :, 5:].max(2)
@@ -89,6 +92,7 @@ def threshold_confidence(pred, threshold=0.1):
 def NMS(preds, threshold=0.4):
     """
     Non maximal suppression
+    :return ((corners of boxes, class label, probability) for each image)
     """
     output = []
     for bbox_batch, cls_batch, scr_batch in preds:
