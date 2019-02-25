@@ -59,7 +59,7 @@ def convert_bbox_to_z(bbox):
     return np.array([x, y, s, r]).reshape((4, 1))
 
 
-def convert_x_to_bbox(x, score=None):
+def convert_z_to_bbox(x, score=None):
     """
     Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
       [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
@@ -126,14 +126,14 @@ class KalmanBoxTracker(object):
         if self.time_since_update > 0:
             self.hit_streak = 0
         self.time_since_update += 1
-        self.history.append(convert_x_to_bbox(self.kf.x))
+        self.history.append(convert_z_to_bbox(self.kf.x))
         return self.history[-1]
 
     def get_state(self):
         """
         Returns the current bounding box estimate.
         """
-        return convert_x_to_bbox(self.kf.x)
+        return convert_z_to_bbox(self.kf.x)
 
 
 def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
@@ -189,7 +189,6 @@ class Sort(object):
         # get predicted locations from existing trackers.
         trks = np.zeros((len(self.trackers), 5))
         to_del = []
-        ret = []
         for t, trk in enumerate(trks):
             pos = self.trackers[t].predict()[0]
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
@@ -198,18 +197,21 @@ class Sort(object):
         trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
         for t in reversed(to_del):
             self.trackers.pop(t)
+
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks)
 
         # update matched trackers with assigned detections
         for t, trk in enumerate(self.trackers):
             if t not in unmatched_trks:
-                d = matched[np.where(matched[:, 1] == t)[0], 0]
-                trk.update(dets[d, :][0])
+                d = matched[np.flatnonzero(matched[:, 1] == t)[0], 0]
+                trk.update(dets[d, :])
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :])
             self.trackers.append(trk)
+
+        ret = []
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
