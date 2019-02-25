@@ -49,13 +49,12 @@ def anchor_transform(prediction, inp_dim, anchors, num_classes):
     prediction[:, :, 5:] = prediction[:, :, 5:].softmax(-1)
 
     # Sigmoid the centre_X, centre_Y
-    grid = torch.arange(grid_size[1]).to(prediction)
+    grid = torch.arange(grid_size[1], dtype=prediction.dtype, device=prediction.device)
     prediction[:, :, 0].sigmoid_().add_(grid.view(1, 1, 1, -1)).mul_(stride[1])
-    grid = torch.arange(grid_size[0]).to(prediction)
+    grid = torch.arange(grid_size[0], dtype=prediction.dtype, device=prediction.device)
     prediction[:, :, 1].sigmoid_().add_(grid.view(1, 1, -1, 1)).mul_(stride[0])
 
     # log space transform height and the width
-    anchors = prediction.new_tensor(anchors)
     prediction[:, :, 2].exp_().mul_(anchors[:, 0].view(1, -1, 1, 1))
     prediction[:, :, 3].exp_().mul_(anchors[:, 1].view(1, -1, 1, 1))
 

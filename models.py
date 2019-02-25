@@ -40,7 +40,7 @@ class Shortcut(nn.Module):
 class YOLODetection(nn.Module):
     def __init__(self, anchors, classes):
         super(YOLODetection, self).__init__()
-        self.anchors = anchors
+        self.register_buffer('anchors', torch.tensor(anchors, dtype=torch.float))
         self.classes = classes
 
     def forward(self, x, inp_dim):
