@@ -9,8 +9,8 @@ def IOU(box1, box2):
     Returns the IoU of two bounding boxes
     """
     # Get the coordinates of bounding boxes
-    b1_x1, b1_y1, b1_x2, b1_y2 = [x.unsqueeze(0) for x in (box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3])]
-    b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
+    b1_x1, b1_y1, b1_x2, b1_y2 = [x.unsqueeze(1) for x in box1.transpose(0, 1)]
+    b2_x1, b2_y1, b2_x2, b2_y2 = [x.unsqueeze(0) for x in box2.transpose(0, 1)]
 
     # get the corrdinates of the intersection rectangle
     inter_x1 = torch.max(b1_x1, b2_x1)

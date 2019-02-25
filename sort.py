@@ -21,20 +21,27 @@ from filterpy.kalman import KalmanFilter
 from scipy.optimize import linear_sum_assignment
 
 
-def iou(bb_test, bb_gt):
+def iou(b1, b2):
     """
     Computes IUO between two bboxes in the form [x1,y1,x2,y2]
     """
-    xx1 = np.maximum(bb_test[0], bb_gt[0])
-    yy1 = np.maximum(bb_test[1], bb_gt[1])
-    xx2 = np.minimum(bb_test[2], bb_gt[2])
-    yy2 = np.minimum(bb_test[3], bb_gt[3])
-    w = np.maximum(0., xx2 - xx1)
-    h = np.maximum(0., yy2 - yy1)
-    wh = w * h
-    o = wh / ((bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1])
-              + (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1]) - wh)
-    return o
+    b1_x1, b1_y1, b1_x2, b1_y2 = [x[:, np.newaxis] for x in b1.T]
+    b2_x1, b2_y1, b2_x2, b2_y2 = [x[np.newaxis, :] for x in b2.T]
+
+    # get the corrdinates of the intersection rectangle
+    inter_x1 = np.maximum(b1_x1, b2_x1)
+    inter_y1 = np.maximum(b1_y1, b2_y1)
+    inter_x2 = np.minimum(b1_x2, b2_x2)
+    inter_y2 = np.minimum(b1_y2, b2_y2)
+
+    # Intersection area
+    inter_area = np.maximum(inter_x2 - inter_x1 + 1, 0) * np.maximum(inter_y2 - inter_y1 + 1, 0)
+
+    # Union Area
+    b1_area = (b1_x2 - b1_x1 + 1) * (b1_y2 - b1_y1 + 1)
+    b2_area = (b2_x2 - b2_x1 + 1) * (b2_y2 - b2_y1 + 1)
+
+    return inter_area / (b1_area + b2_area - inter_area)
 
 
 def convert_bbox_to_z(bbox):
@@ -137,11 +144,7 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
     """
     if len(trackers) == 0:
         return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0, 5), dtype=int)
-    iou_matrix = np.zeros((len(detections), len(trackers)), dtype=np.float32)
-
-    for d, det in enumerate(detections):
-        for t, trk in enumerate(trackers):
-            iou_matrix[d, t] = iou(det, trk)
+    iou_matrix = iou(detections[:, :-1], trackers[:, :-1])
     matched_detections, matched_trackers = linear_sum_assignment(-iou_matrix)
 
     unmatched_detections = [d for d in range(len(detections)) if d not in matched_detections]
