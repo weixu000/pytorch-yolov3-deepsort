@@ -16,11 +16,11 @@ if __name__ == '__main__':
 
     for frame in iterate_video(cap):
         with DurationTimer() as d:
-            output = detecter.detect(frame)
-            output = tuple(y[output[1] == Detecter.classes.index('person')] for y in output)  # Select persons
-            trks = tracker.update(torch.cat((output[0], output[2].unsqueeze(1)), dim=1).numpy())
+            detections = detecter.detect(frame)
+            detections = tuple(x[detections[1] == Detecter.classes.index('person')] for x in detections)
+            tracks = tracker.update(torch.cat((detections[0], detections[2].unsqueeze(1)), dim=1).numpy())
 
-        draw_trackers(frame, trks)
+        draw_trackers(frame, tracks)
         draw_text(frame, f'FPS: {int(1 / d.duration)}', [255, 255, 255], upper_right=(frame.shape[1] - 1, 0))
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
