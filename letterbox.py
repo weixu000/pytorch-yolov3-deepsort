@@ -43,7 +43,7 @@ def inv_letterbox_bbox(bbox, box_dim, img_dim):
     new_h, new_w = letterbox_dim(img_dim, box_dim)
 
     bbox[:, [0, 2]] -= (w - new_w) // 2
-    bbox[:, [0, 2]] *= img_w / w
+    bbox[:, [0, 2]] *= img_w / new_w
 
     bbox[:, [1, 3]] -= (h - new_h) // 2
-    bbox[:, [1, 3]] *= img_h / h
+    bbox[:, [1, 3]] *= img_h / new_h
