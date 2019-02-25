@@ -142,29 +142,23 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
     for d, det in enumerate(detections):
         for t, trk in enumerate(trackers):
             iou_matrix[d, t] = iou(det, trk)
-    matched_indices = linear_sum_assignment(-iou_matrix)
+    matched_detections, matched_trackers = linear_sum_assignment(-iou_matrix)
 
-    unmatched_detections = []
-    for d, det in enumerate(detections):
-        if d not in matched_indices[:, 0]:
-            unmatched_detections.append(d)
-    unmatched_trackers = []
-    for t, trk in enumerate(trackers):
-        if t not in matched_indices[:, 1]:
-            unmatched_trackers.append(t)
+    unmatched_detections = [d for d in range(len(detections)) if d not in matched_detections]
+    unmatched_trackers = [t for t in range(len(trackers)) if t not in matched_trackers]
 
     # filter out matched with low IOU
     matches = []
-    for m in matched_indices:
+    for m in zip(matched_detections, matched_trackers):
         if iou_matrix[m[0], m[1]] < iou_threshold:
             unmatched_detections.append(m[0])
             unmatched_trackers.append(m[1])
         else:
-            matches.append(m.reshape(1, 2))
-    if len(matches) == 0:
+            matches.append(m)
+    if not matches:
         matches = np.empty((0, 2), dtype=int)
     else:
-        matches = np.concatenate(matches, axis=0)
+        matches = np.array(matches, dtype=int)
 
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
