@@ -1,7 +1,7 @@
 import cv2
 import torch
 
-from bbox import threshold_confidence, NMS
+from bbox import center_to_corner, threshold_confidence, NMS
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from letterbox import letterbox_image, inv_letterbox_bbox
 from util import load_classes, color_map, cvmat_to_tensor, draw_detections
@@ -29,6 +29,7 @@ class Detecter:
         tensor = cvmat_to_tensor(img).unsqueeze(0).cuda()
         with torch.no_grad():
             output = self.net(tensor).data
+        center_to_corner(output)
         output = threshold_confidence(output)
         output = NMS(output)[0]
         inv_letterbox_bbox(output[0], self.inp_dim, cvmat.shape[:2])

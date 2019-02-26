@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from bbox import threshold_confidence, NMS
+from bbox import center_to_corner, threshold_confidence, NMS
 from coco import COCODataset
 from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
 from letterbox import letterbox_image
@@ -42,6 +42,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         for img in tqdm(loader):
             output = net(img.cuda()).data
+            center_to_corner(output)
             output = threshold_confidence(output)
             output = NMS(output)
             out.extend(tuple(y.cpu() for y in x) for x in output)

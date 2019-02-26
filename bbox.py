@@ -76,7 +76,6 @@ def threshold_confidence(pred, threshold=0.1):
     Threshold bounding boxes by probability
     :return ((corners of boxes, class label, probability) for each image)
     """
-    center_to_corner(pred)
     max_conf_score, max_conf = pred[:, :, 5:].max(2)
     max_conf_score *= pred[:, :, 4]  # probability = object confidence * class score
     prob_thresh = max_conf_score > threshold
