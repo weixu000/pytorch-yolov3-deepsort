@@ -13,11 +13,12 @@ class Detecter:
     """
     classes = load_classes('data/coco.names')
     cmap = color_map(len(classes))
+    arch = 'yolov3'
 
     def __init__(self, inp_dim=None):
         # Set up the neural network
-        self.net_info, self.net = parse_darknet(parse_cfg_file('cfg/yolov3.cfg'))
-        parse_weights_file(self.net, 'weights/yolov3.weights')
+        self.net_info, self.net = parse_darknet(parse_cfg_file(f'cfg/{self.arch}.cfg'))
+        parse_weights_file(self.net, f'weights/{self.arch}.weights')
         self.net.cuda().eval()
         print("Network successfully loaded")
 
