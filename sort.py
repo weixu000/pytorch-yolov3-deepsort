@@ -167,7 +167,7 @@ class Sort(object):
     def update(self, dets):
         """
         Params:
-          dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
+          dets - a numpy array of detections in the format [[x1,y1,x2,y2],[x1,y1,x2,y2,...]
         Requires: this method must be called once for each frame even with empty detections.
         Returns the a similar array, where the last column is the object ID.
 
@@ -179,7 +179,7 @@ class Sort(object):
         self.trackers = [t for t in self.trackers if np.all(np.isfinite(t.predict()))]
         trks = np.array([t.state for t in self.trackers])
 
-        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets[:, :-1], trks)
+        matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets, trks)
 
         # update matched trackers with assigned detections
         for d, t in matched:

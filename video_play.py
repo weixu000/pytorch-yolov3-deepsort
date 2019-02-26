@@ -1,5 +1,4 @@
 import cv2
-import torch
 
 from detection import Detecter
 from sort import Sort
@@ -9,8 +8,7 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture('/home/wei-x15/Downloads/TownCentreXVID.avi')
     orig_dim = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 
-    inp_dim = tuple((x // 4 // 2 ** 5 + 1) * 2 ** 5 for x in orig_dim)
-    detecter = Detecter(inp_dim)
+    detecter = Detecter()
 
     tracker = Sort()
 
@@ -18,7 +16,7 @@ if __name__ == '__main__':
         with DurationTimer() as d:
             detections = detecter.detect(frame)
             detections = tuple(x[detections[1] == Detecter.classes.index('person')] for x in detections)
-            tracks = tracker.update(torch.cat((detections[0], detections[2].unsqueeze(1)), dim=1).numpy())
+            tracks = tracker.update(detections[0].numpy())
 
         draw_trackers(frame, tracks)
         draw_text(frame, f'FPS: {int(1 / d.duration)}', [255, 255, 255], upper_right=(frame.shape[1] - 1, 0))
