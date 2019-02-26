@@ -42,8 +42,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         for img in tqdm(loader):
             output = net(img.cuda()).data
-            center_to_corner(output)
             output = threshold_confidence(output)
+            center_to_corner(output)
             output = NMS(output)
             out.extend(tuple(y.cpu() for y in x) for x in output)
 

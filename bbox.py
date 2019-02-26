@@ -61,14 +61,15 @@ def anchor_transform(prediction, inp_dim, anchors, num_classes):
     return prediction.transpose(2, -1).contiguous().view(batch_size, -1, bbox_attrs)
 
 
-def center_to_corner(pred):
+def center_to_corner(preds):
     """
     Convert (center_x, center_y, width, height) to (topleft_x, topleft_y, bottomleft_x, bottomright_y)
     """
-    pred[:, :, 0] -= pred[:, :, 2] / 2
-    pred[:, :, 1] -= pred[:, :, 3] / 2
-    pred[:, :, 2] += pred[:, :, 0]
-    pred[:, :, 3] += pred[:, :, 1]
+    for bbox, *_ in preds:
+        bbox[:, 0] -= bbox[:, 2] / 2
+        bbox[:, 1] -= bbox[:, 3] / 2
+        bbox[:, 2] += bbox[:, 0]
+        bbox[:, 3] += bbox[:, 1]
 
 
 def threshold_confidence(pred, threshold=0.1):
