@@ -61,15 +61,14 @@ def anchor_transform(prediction, inp_dim, anchors, num_classes):
     return prediction.transpose(2, -1).contiguous().view(batch_size, -1, bbox_attrs)
 
 
-def center_to_corner(preds):
+def center_to_corner(bbox):
     """
     Convert (center_x, center_y, width, height) to (topleft_x, topleft_y, bottomleft_x, bottomright_y)
     """
-    for bbox, *_ in preds:
-        bbox[:, 0] -= bbox[:, 2] / 2
-        bbox[:, 1] -= bbox[:, 3] / 2
-        bbox[:, 2] += bbox[:, 0]
-        bbox[:, 3] += bbox[:, 1]
+    bbox[:, 0] -= bbox[:, 2] / 2
+    bbox[:, 1] -= bbox[:, 3] / 2
+    bbox[:, 2] += bbox[:, 0]
+    bbox[:, 3] += bbox[:, 1]
 
 
 def threshold_confidence(pred, threshold=0.1):
@@ -77,47 +76,45 @@ def threshold_confidence(pred, threshold=0.1):
     Threshold bounding boxes by probability
     :return ((corners of boxes, class label, probability) for each image)
     """
-    max_conf_score, max_conf = pred[:, :, 5:].max(2)
-    max_conf_score *= pred[:, :, 4]  # probability = object confidence * class score
-    prob_thresh = max_conf_score > threshold
+    max_cls_score, max_cls = pred[:, :, 5:].max(2)
+    max_cls_score *= pred[:, :, 4]  # probability = object confidence * class score
+    prob_thresh = max_cls_score > threshold
 
     output = []
-    for batch in zip(pred[:, :, :4], max_conf, max_conf_score, prob_thresh):
+    for batch in zip(pred[:, :, :4], max_cls, max_cls_score, prob_thresh):
         output.append(tuple(x[batch[-1]] for x in batch[:-1]))
 
     return tuple(output)
 
 
-def NMS(preds, threshold=0.4):
+def NMS(batch, threshold=0.4):
     """
     Non maximal suppression
-    :return ((corners of boxes, class label, probability) for each image)
+    :return (corners of boxes, class label, probability)
     """
-    output = []
-    for bbox_batch, cls_batch, scr_batch in preds:
-        ind_batch = []
-        for cls in cls_batch.unique():
-            ind_cls = (cls_batch == cls).nonzero().squeeze(1)
-            bbox_cls, scr_cls = bbox_batch[ind_cls], scr_batch[ind_cls]
+    bbox_batch, cls_batch, scr_batch = batch
+    ind_batch = []
+    for cls in cls_batch.unique():
+        ind_cls = (cls_batch == cls).nonzero().squeeze(1)
+        bbox_cls, scr_cls = bbox_batch[ind_cls], scr_batch[ind_cls]
 
-            scr_cls, sorted_ind = scr_cls.sort(descending=True)
-            ind_cls = ind_cls[sorted_ind]
-            bbox_cls = bbox_cls[sorted_ind]
+        scr_cls, sorted_ind = scr_cls.sort(descending=True)
+        ind_cls = ind_cls[sorted_ind]
+        bbox_cls = bbox_cls[sorted_ind]
 
-            i = 0
-            while i < ind_cls.shape[0]:
-                # Get IOUs of all boxes coming after bbox_cls[i]
-                ious = IOU(bbox_cls[i].unsqueeze(0), bbox_cls[i + 1:]).squeeze(0)
+        i = 0
+        while i < ind_cls.shape[0]:
+            # Get IOUs of all boxes coming after bbox_cls[i]
+            ious = IOU(bbox_cls[i].unsqueeze(0), bbox_cls[i + 1:]).squeeze(0)
 
-                # Move boxes with smaller IOUs up and remove the others
-                iou_ind = (ious < threshold).nonzero().squeeze(1)
+            # Move boxes with smaller IOUs up and remove the others
+            iou_ind = (ious < threshold).nonzero().squeeze(1)
 
-                ind_cls[i + 1:i + 1 + iou_ind.shape[0]] = ind_cls[i + 1 + iou_ind]
-                bbox_cls[i + 1:i + 1 + iou_ind.shape[0]] = bbox_cls[i + 1 + iou_ind]
+            ind_cls[i + 1:i + 1 + iou_ind.shape[0]] = ind_cls[i + 1 + iou_ind]
+            bbox_cls[i + 1:i + 1 + iou_ind.shape[0]] = bbox_cls[i + 1 + iou_ind]
 
-                ind_cls = ind_cls[:i + 1 + iou_ind.shape[0]]
-                bbox_cls = bbox_cls[:i + 1 + iou_ind.shape[0]]
-                i += 1
-            ind_batch += ind_cls.tolist()
-        output.append(tuple(x[ind_batch] for x in [bbox_batch, cls_batch, scr_batch]))
-    return tuple(output)
+            ind_cls = ind_cls[:i + 1 + iou_ind.shape[0]]
+            bbox_cls = bbox_cls[:i + 1 + iou_ind.shape[0]]
+            i += 1
+        ind_batch += ind_cls.tolist()
+    return tuple(x[ind_batch] for x in [bbox_batch, cls_batch, scr_batch])

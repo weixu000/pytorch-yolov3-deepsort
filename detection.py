@@ -29,9 +29,9 @@ class Detecter:
         tensor = cvmat_to_tensor(img).unsqueeze(0).cuda()
         with torch.no_grad():
             output = self.net(tensor).data
-        output = threshold_confidence(output)
-        center_to_corner(output)
-        output = NMS(output)[0]
+        output = threshold_confidence(output)[0]
+        center_to_corner(output[0])
+        output = NMS(output)
         inv_letterbox_bbox(output[0], self.inp_dim, cvmat.shape[:2])
         return tuple(y.cpu() for y in output)
 
