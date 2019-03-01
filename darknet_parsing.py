@@ -120,10 +120,8 @@ def parse_yolo(options, filters_list):
     anchors = [(anchors[x], anchors[x + 1]) for x in range(0, len(anchors), 2)]
     anchors = [anchors[x] for x in mask]
 
-    classes = find_option(options, 'classes', 20)
-
     filters_list.append(filters_list[-1])
-    return YOLODetection(anchors, classes)
+    return YOLODetection(anchors)
 
 
 parse_func_factory = {

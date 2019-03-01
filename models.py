@@ -38,10 +38,9 @@ class Shortcut(nn.Module):
 
 
 class YOLODetection(nn.Module):
-    def __init__(self, anchors, classes):
+    def __init__(self, anchors):
         super(YOLODetection, self).__init__()
         self.register_buffer('anchors', torch.tensor(anchors, dtype=torch.float))
-        self.classes = classes
         self.grid = [torch.empty(0), torch.empty(0)]
 
     def forward(self, x, inp_dim):
@@ -52,8 +51,8 @@ class YOLODetection(nn.Module):
 
         batch_size = x.shape[0]
         stride = inp_dim[0] // grid_size[0], inp_dim[1] // grid_size[1]
-        bbox_attrs = 5 + self.classes
         num_anchors = len(self.anchors)
+        bbox_attrs = x.shape[1] // num_anchors
 
         x = x.view(batch_size, num_anchors, bbox_attrs, *grid_size)
 
