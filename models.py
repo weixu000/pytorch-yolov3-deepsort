@@ -42,10 +42,22 @@ class YOLODetection(nn.Module):
         super(YOLODetection, self).__init__()
         self.register_buffer('anchors', torch.tensor(anchors, dtype=torch.float))
         self.classes = classes
+        self.grid = [torch.empty(0), torch.empty(0)]
 
     def forward(self, x, inp_dim):
-        prediction = anchor_transform(x, inp_dim, self.anchors, self.classes)
-        return prediction
+        grid_size = x.shape[2:]
+        if grid_size != [x.shape[0] for x in self.grid]:
+            self.grid = [torch.arange(grid_size[0], dtype=x.dtype, device=x.device),
+                         torch.arange(grid_size[1], dtype=x.dtype, device=x.device)]
+
+        batch_size = x.shape[0]
+        stride = inp_dim[0] // grid_size[0], inp_dim[1] // grid_size[1]
+        bbox_attrs = 5 + self.classes
+        num_anchors = len(self.anchors)
+
+        x = x.view(batch_size, num_anchors, bbox_attrs, *grid_size)
+
+        return anchor_transform(x, self.anchors, self.grid, stride)
 
 
 class Darknet(nn.Module):

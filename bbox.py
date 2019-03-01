@@ -30,18 +30,10 @@ def IOU(box1, box2):
     return iou
 
 
-def anchor_transform(prediction, inp_dim, anchors, num_classes):
+def anchor_transform(prediction, anchors, grid, stride):
     """
     Transform network prediction into (center_x, center_y, width, height)
     """
-    batch_size = prediction.shape[0]
-    grid_size = prediction.shape[2:]
-    stride = inp_dim[0] // grid_size[0], inp_dim[1] // grid_size[1]
-    bbox_attrs = 5 + num_classes
-    num_anchors = len(anchors)
-
-    prediction = prediction.view(batch_size, num_anchors, bbox_attrs, *grid_size)
-
     # Sigmoid object confidence
     prediction[:, :, 4].sigmoid_()
 
@@ -49,16 +41,14 @@ def anchor_transform(prediction, inp_dim, anchors, num_classes):
     prediction[:, :, 5:] = prediction[:, :, 5:].softmax(-1)
 
     # Sigmoid the centre_X, centre_Y
-    grid = torch.arange(grid_size[1], dtype=prediction.dtype, device=prediction.device)
-    prediction[:, :, 0].sigmoid_().add_(grid.view(1, 1, 1, -1)).mul_(stride[1])
-    grid = torch.arange(grid_size[0], dtype=prediction.dtype, device=prediction.device)
-    prediction[:, :, 1].sigmoid_().add_(grid.view(1, 1, -1, 1)).mul_(stride[0])
+    prediction[:, :, 0].sigmoid_().add_(grid[1].view(1, 1, 1, -1)).mul_(stride[1])
+    prediction[:, :, 1].sigmoid_().add_(grid[0].view(1, 1, -1, 1)).mul_(stride[0])
 
     # log space transform height and the width
     prediction[:, :, 2].exp_().mul_(anchors[:, 0].view(1, -1, 1, 1))
     prediction[:, :, 3].exp_().mul_(anchors[:, 1].view(1, -1, 1, 1))
 
-    return prediction.transpose(2, -1).contiguous().view(batch_size, -1, bbox_attrs)
+    return prediction.transpose(2, -1).contiguous().view(prediction.shape[0], -1, prediction.shape[2])
 
 
 def center_to_corner(bbox):
