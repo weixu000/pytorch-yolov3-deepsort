@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch import nn as nn
 
-from models import Darknet, Identity, Route, Shortcut, YOLODetection
+from .models import Darknet, Identity, Route, Shortcut, YOLODetection
 
 
 def find_option(options, name, default=None, convert=None):

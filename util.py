@@ -2,30 +2,6 @@ import time
 
 import cv2
 import numpy as np
-import torch
-
-
-def load_classes(file_path):
-    with open(file_path, "r") as fp:
-        names = [x for x in fp.read().split("\n") if x]
-    return names
-
-
-def color_map(n):
-    def bit_get(x, i):
-        return x & (1 << i)
-
-    cmap = []
-    for i in range(n):
-        r = g = b = 0
-        for j in range(7, -1, -1):
-            r |= bit_get(i, 0) << j
-            g |= bit_get(i, 1) << j
-            b |= bit_get(i, 2) << j
-            i >>= 3
-
-        cmap.append((r, g, b))
-    return cmap
 
 
 class DurationTimer:
@@ -56,13 +32,6 @@ def draw_text(img, label, color, bottom_left=None, upper_right=None):
 
     cv2.rectangle(img, bottom_left, upper_right, color, -1)
     cv2.putText(img, label, bottom_left, cv2.FONT_HERSHEY_PLAIN, 1, [255 - c for c in color])
-
-
-def cvmat_to_tensor(mat):
-    mat = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
-    mat = mat.transpose((2, 0, 1))
-    mat = torch.from_numpy(mat).float().div(255)
-    return mat
 
 
 def draw_bbox(img, bbox, label_fn=lambda i: '', color_fn=lambda i: [255, 0, 0]):

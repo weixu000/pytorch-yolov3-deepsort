@@ -5,7 +5,7 @@ Pytorch models of YOLO
 import torch
 from torch import nn as nn
 
-from bbox import anchor_transform
+from .bbox import anchor_transform
 
 
 class Identity(nn.Module):

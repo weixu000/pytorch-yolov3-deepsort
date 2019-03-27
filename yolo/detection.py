@@ -1,10 +1,39 @@
 import cv2
 import torch
 
-from bbox import center_to_corner, threshold_confidence, NMS
-from darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
-from letterbox import letterbox_image, inv_letterbox_bbox
-from util import load_classes, color_map, cvmat_to_tensor, draw_detections
+from .bbox import center_to_corner, threshold_confidence, NMS
+from .darknet_parsing import parse_cfg_file, parse_darknet, parse_weights_file
+from .letterbox import letterbox_image, inv_letterbox_bbox
+
+
+def load_classes(file_path):
+    with open(file_path, "r") as fp:
+        names = [x for x in fp.read().split("\n") if x]
+    return names
+
+
+def color_map(n):
+    def bit_get(x, i):
+        return x & (1 << i)
+
+    cmap = []
+    for i in range(n):
+        r = g = b = 0
+        for j in range(7, -1, -1):
+            r |= bit_get(i, 0) << j
+            g |= bit_get(i, 1) << j
+            b |= bit_get(i, 2) << j
+            i >>= 3
+
+        cmap.append((r, g, b))
+    return cmap
+
+
+def cvmat_to_tensor(mat):
+    mat = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
+    mat = mat.transpose((2, 0, 1))
+    mat = torch.from_numpy(mat).float().div(255)
+    return mat
 
 
 class Detecter:
@@ -33,17 +62,4 @@ class Detecter:
         center_to_corner(output[0])
         output = NMS(output)
         inv_letterbox_bbox(output[0], self.inp_dim, cvmat.shape[:2])
-        return output
-
-
-if __name__ == '__main__':
-    detecter = Detecter()
-
-    img = cv2.imread('imgs/dog-cycle-car.png')
-    output = detecter.detect(img)
-
-    draw_detections(img, output, Detecter.classes, Detecter.cmap)
-
-    cv2.imshow('image', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        return tuple(x[output[1] == self.classes.index('person')] for x in output)
