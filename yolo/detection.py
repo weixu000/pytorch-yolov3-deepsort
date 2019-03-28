@@ -62,4 +62,12 @@ class Detecter:
         center_to_corner(output[0])
         output = NMS(output)
         inv_letterbox_bbox(output[0], self.inp_dim, cvmat.shape[:2])
-        return tuple(x[output[1] == self.classes.index('person')] for x in output)
+
+        box, cls, scr = output
+        ind = cls == self.classes.index('person')
+        box, scr = box[ind], scr[ind]
+
+        box[:, [0, 2]] = torch.clamp(box[:, [0, 2]], min=0, max=cvmat.shape[1])
+        box[:, [1, 3]] = torch.clamp(box[:, [1, 3]], min=0, max=cvmat.shape[0])
+
+        return box.numpy(), scr.numpy()
