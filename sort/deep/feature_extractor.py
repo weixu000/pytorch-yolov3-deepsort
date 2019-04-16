@@ -17,9 +17,9 @@ class Extractor:
         self.net.to(self.device)
 
     def __call__(self, img: [np.ndarray]):
-        img = np.stack([cv2.resize(x.astype(np.float32), (64, 128)) for x in img])
+        img = np.stack([cv2.resize(cv2.cvtColor(x, cv2.COLOR_RGB2BGR), (64, 128)) for x in img]).astype(np.float32)
         img = torch.from_numpy(img).permute(0, 3, 1, 2)
-        img.sub_(self.MEAN[None, :, None, None]).div_(self.STD[None, :, None, None])
+        img.div_(255).sub_(self.MEAN[None, :, None, None]).div_(self.STD[None, :, None, None])
         img = img.to(self.device)
         with torch.no_grad():
             feature = self.net(img)

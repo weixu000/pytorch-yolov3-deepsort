@@ -6,8 +6,6 @@ from .utils import NearestNeighborDistanceMetric, Detection, Tracker
 
 class DeepSort(object):
     def __init__(self, model_path: str):
-        self.nms_max_overlap: float = 1.0
-
         self.extractor: Extractor = Extractor(model_path, use_cuda=True)
 
         max_cosine_distance = 0.2
@@ -27,7 +25,7 @@ class DeepSort(object):
         # output bbox identities
         outputs = []
         for track in self.tracker.tracks:
-            if not track.is_confirmed() or track.time_since_update > 1:
+            if not track.is_confirmed():
                 continue
             outputs.append(np.array([*track.tlbr, track.track_id], dtype=np.int))
         return np.stack(outputs, axis=0) if outputs else np.empty((0, 5))
@@ -36,7 +34,3 @@ class DeepSort(object):
         features = [ori_img[y1:y2, x1:x2] for x1, y1, x2, y2 in bbox_xyxy.astype(np.int)]
         features = self.extractor(features)
         return features
-
-
-if __name__ == '__main__':
-    pass
