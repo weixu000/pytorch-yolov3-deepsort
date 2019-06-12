@@ -62,7 +62,7 @@ def draw_trackers(img, trackers):
     if trackers.shape[0] == 0: return
     bbox, id = trackers[:, :-1], trackers[:, -1]
     label_fn = lambda i: f'{int(id[i])}'
-    draw_bbox(img, bbox.astype(np.int), label_fn)
+    draw_bbox(img, bbox.astype(np.int), label_fn, lambda i: [0, 0, 255])
 
 
 def iterate_video(capture):
